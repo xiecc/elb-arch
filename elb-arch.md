@@ -137,7 +137,7 @@ ELB的系统架构以及与其他模块交互的架构图如图如示：
 * 负载均衡：前端可能会架nginx， 通过域名访问
 * 扩展方式: 静态配好多台， 不会自动扩展
 * 高可用保证：多台api server， 部署在不同云主机 
-* 安全保障：暂时只用ip白名单
+* 安全保障：暂时只用ip白名单, 后期采用管理员身份认证
 
 ### 3.3 外部服务说明
 
@@ -162,36 +162,477 @@ ELB的系统架构以及与其他模块交互的架构图如图如示：
 
 ### 4.1 创建ELB
 
-
+![elb-create-flow](img/elb-create-flow.png)
 
 ### 4.2 修改ELB
 
+![elb-modify-flow](img/elb-modify-flow.png)
 
+### 4.3 自动scale up
 
+TODO
 
 ## 5. 进程配置说明
 
 ### 5.1 运维脚本说明
 
+<table>
+	<tr>
+		<td>脚本分类</td>
+		<td>脚本名称</td>
+		<td>作用</td>
+	</tr>
+	<tr>
+		<td>运维类</td>
+		<td>update-lvs.sh</td>
+		<td>更新LVS配置</td>
+	</tr>	
+</table>
+
+重构中
+
+
 ### 5.2 配置文件说明
+
+重构中
+
+### 5.3 进程输出日志说明
+
+重构中
 
 ## 6. 监控报警机制
 
 ### 6.1 LVS
 
+#### 6.1.1 监控
+
+* 云主机通用监控项
+
+<table>
+	<tr>
+		<td>监控项</td>
+		<td>监控方式</td>
+		<td>监控周期</td>
+		<td>展示方式</td>
+	</tr>
+	<tr>
+		<td>CPU利用率</td>
+		<td>云主机推送</td>
+		<td>60秒</td>
+		<td>云计算管理平台</td>
+	</tr>	
+	<tr>
+		<td>内存利用率</td>
+		<td>云主机推送</td>
+		<td>60秒</td>
+		<td>云计算管理平台</td>
+	</tr>	
+	<tr>
+		<td>网络流出带宽</td>
+		<td>云主机推送</td>
+		<td>60秒</td>
+		<td>云计算管理平台</td>
+	</tr>	
+	<tr>
+		<td>网络流入带宽</td>
+		<td>云主机推送</td>
+		<td>60秒</td>
+		<td>云计算管理平台</td>
+	</tr>			
+</table>
+
+* 专用监控项
+
+<table>
+	<tr>
+		<td>监控项</td>
+		<td>监控方式</td>
+		<td>监控周期</td>
+		<td>展示方式</td>
+	</tr>
+	<tr>
+		<td>LVS连接数，按IP分</td>
+		<td>脚本定期运行，云主机推送</td>
+		<td>60秒</td>
+		<td>ELB管理平台</td>
+	</tr>
+	<tr>
+		<td>LVS网络流量，按IP分</td>
+		<td>脚本定期运行，云主机推送</td>
+		<td>60秒</td>
+		<td>ELB管理平台</td>
+	</tr>
+	<tr>
+		<td>netstat统计的各状态网络连接数</td>
+		<td>同上</td>
+		<td>60秒</td>
+		<td>ELB管理平台</td>
+	</tr>
+	<tr>
+		<td>扫描LVS错误日志</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>ELB管理平台</td>
+	</tr>
+</table>
+
+
+
+#### 6.1.2 异常报警
+
+* 通用项报警
+
+<table>
+	<tr>
+		<td>待查项</td>
+		<td>检查方式</td>
+		<td>检查周期</td>
+		<td>报警方式</td>
+		<td>报警类别</td>
+	</tr>
+	<tr>
+		<td>CPU利用率</td>
+		<td>比较当前值与阈值</td>
+		<td>60s</td>
+		<td>易信、POPO、邮件</td>
+		<td>状态维度报警</td>
+	</tr>	
+	<tr>
+		<td>内存占用率</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+	</tr>	
+	<tr>
+		<td>网络流出带宽</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+	</tr>	
+	<tr>
+		<td>网络流入带宽</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+	</tr>			
+</table>
+
+* 专用报警项
+
+<table>
+	<tr>
+		<td>待查项</td>
+		<td>检查方式</td>
+		<td>检查周期</td>
+		<td>报警方式</td>
+		<td>报警类别</td>
+	</tr>
+	<tr>
+		<td>LVS连接数</td>
+		<td>比较当前值与阈值</td>
+		<td>60s</td>
+		<td>易信、POPO、邮件</td>
+		<td>状态维度报警</td>
+	</tr>	
+	<tr>
+		<td>LVS网络流量</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+	</tr>	
+	<tr>
+		<td>netstat不常见的状态数（如CLOSE_WAIT FIN_WAIT2）</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+	</tr>	
+	<tr>
+		<td>LVS出现错误日志</td>
+		<td>出现即报警</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+	</tr>		
+</table>
+
 ### 6.2 Tengine
+
+#### 6.2.1 监控
+
+* 通用监控项， 同LVS
+* 专用监控项
+
+<table>
+	<tr>
+		<td>监控项</td>
+		<td>监控方式</td>
+		<td>监控周期</td>
+		<td>展示方式</td>
+	</tr>
+	<tr>
+		<td>某个端口的流入、流出流量</td>
+		<td>脚本定期运行，云主机推送</td>
+		<td>60秒</td>
+		<td>ELB管理平台</td>
+	</tr>
+	<tr>
+		<td>nginx相关统计信息： active_connections, accepts, handled, requests, request_time, reading, writing, waiting, exec_time</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+	</tr>	
+	<tr>
+		<td>tengine后端real server健康检查</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+	</tr>		
+	<tr>
+		<td>tengine错误日志抓取</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+	</tr>	
+	<tr>
+		<td>tengine按IP统计的请求（前1000个）</td>
+		<td>同上</td>
+		<td>300秒</td>
+		<td>同上</td>
+	</tr>	
+	<tr>
+		<td>tengine按URL统计的请求量</td>
+		<td>同上</td>
+		<td>300秒</td>
+		<td>同上</td>
+	</tr>											<tr>
+		<td>netstat统计的网络状态数量</td>
+		<td>同上</td>
+		<td>60秒</td>
+		<td>同上</td>
+	</tr>			
+</table>
+
+#### 6.2.1 异常报警
+
+* 通用监控项， 同LVS
+* 专用报警项
+
+<table>
+	<tr>
+		<td>待查项</td>
+		<td>检查方式</td>
+		<td>检查周期</td>
+		<td>报警方式</td>
+		<td>报警类别</td>
+	</tr>
+	<tr>
+		<td>某个端口的流入、流出流量</td>
+		<td>比较当前值与阈值</td>
+		<td>60s</td>
+		<td>易信、POPO、邮件</td>
+		<td>状态维度报警</td>
+	</tr>	
+	<tr>
+		<td>nginx的相关统计信息： active_connections, accepts, handled, requests, request_time, reading, writing, waiting, exec_time</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+	</tr>	
+	<tr>
+		<td>tengine后端的real server状态</td>
+		<td>出现不健康即报警</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+	</tr>	
+	
+	<tr>
+		<td>netstat不常见的状态数（如CLOSE_WAIT FIN_WAIT2）</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+	</tr>	
+	<tr>
+		<td>tengine出现错误日志</td>
+		<td>出现即报警</td>
+		<td>同上</td>
+		<td>同上</td>
+		<td>同上</td>
+	</tr>		
+</table>
+
+
 
 ### 6.3 Manager
 
+#### 6.3.1 监控
+
+* 通用监控项， 同LVS
+* 专用监控项
+
+<table>
+	<tr>
+		<td>监控项</td>
+		<td>监控方式</td>
+		<td>监控周期</td>
+		<td>展示方式</td>
+	</tr>
+	<tr>
+		<td>各个进程的CPU、内存占用状况</td>
+		<td>脚本定期运行，云主机推送</td>
+		<td>60秒</td>
+		<td>ELB管理平台</td>
+	</tr>
+	<tr>
+		<td>各个进程的gc日志</td>
+		<td>脚本定期运行，云主机推送</td>
+		<td>60秒</td>
+		<td>ELB管理平台</td>
+	</tr>	
+	<tr>
+		<td>应用异常日志</td>
+		<td>脚本定期运行，云主机推送</td>
+		<td>60秒</td>
+		<td>ELB管理平台</td>
+	</tr>		
+</table>
+
+#### 6.3.2 异常报警
+
+<table>
+	<tr>
+		<td>待查项</td>
+		<td>检查方式</td>
+		<td>检查周期</td>
+		<td>报警方式</td>
+	</tr>
+	<tr>
+		<td>各个connector的连通性</td>
+		<td>脚本模拟agent定期执行，访问各个的connector，如果不通则报警</td>
+		<td>5秒</td>
+		<td>易信、POPO、邮件</td>
+	</tr>	
+</table>
+
 ### 6.4 Agent
+
+#### 6.4.1 异常报警
+
+<table>
+	<tr>
+		<td>待查项</td>
+		<td>检查方式</td>
+		<td>检查周期</td>
+		<td>报警方式</td>
+	</tr>
+	<tr>
+		<td>agent是否存活</td>
+		<td>脚本扫描agent，如果进程不存在则重启，并写日志</td>
+		<td>5秒</td>
+		<td>易信、POPO、邮件</td>
+	</tr>	
+	<tr>
+		<td>agent内存、CPU占用状况</td>
+		<td>脚本定期扫描agent，超过阈值报警。如报警不成功则先重启agent再报警，并写日志</td>
+		<td>5秒</td>
+		<td>易信、POPO、邮件</td>
+	</tr>
+</table>
 
 ### 6.5 其他
 
+#### 6.5.1 异常报警
+
+<table>
+	<tr>
+		<td>待查项</td>
+		<td>检查方式</td>
+		<td>检查周期</td>
+		<td>报警方式</td>
+	</tr>
+	<tr>
+		<td>ELB的网络状况</td>
+		<td>Manager定期执行，轮询访问所有的ELB，如果连续3次ping不通则报警</td>
+		<td>10秒</td>
+		<td>易信、POPO、邮件</td>
+	</tr>	
+	<tr>
+		<td>ELB的健康状况</td>
+		<td>Manager定期执行，轮询访问所有的ELB，如果连续3次访问不通就报警</td>
+		<td>60秒</td>
+		<td>易信、POPO、邮件</td>
+	</tr>
+</table>
+
+
 ## 7. 故障处理机制
+
+<table>
+	<tr>
+		<td>对象</td>
+		<td>描述</td>
+		<td>影响</td>
+		<td>发现方式及延迟</td>
+		<td>是否已处理</td>
+		<td>处理方法</td>
+		<td>是否已验证</td>
+	</tr>
+	<tr>
+		<td>tengine/agent/云主机</td>
+		<td>tengine当掉，或所在云主机当掉</td>
+		<td>其它tengine负载变高，如果某个ELB上实例全当会影响服务</td>
+		<td>agent健康检查，5秒</td>
+		<td>是</td>
+		<td>自动，Manager另外分配一台tegine云主机，立即上线</td>
+		<td>否</td>
+	</tr>
+	<tr>
+		<td>LVS/agent/所在物理机</td>
+		<td>LVS主机当机，或进程出问题</td>
+		<td>LVS通过keepalived进行主从切换,有很短暂的服务不可用</td>
+		<td>agent健康检查，5秒</td>
+		<td>是</td>
+		<td>自动，LVS通过keepalived进行主从切换</td>
+		<td>否</td>
+	</tr>	
+	<tr>
+		<td>ELB实例</td>
+		<td>创建ELB实例，或修改实例的工作流失败</td>
+		<td>ELB无法创建成功</td>
+		<td>前台显示工作流的故障日志，并回退之前所有更改</td>
+		<td>是</td>
+		<td>人工，根据故障日志处理；</td>
+		<td>否</td>
+	</tr>						
+</table>
+
 ## 8. 风险控制
 
+<table>
+	<tr>
+		<td>风险项</td>
+		<td>预防应对措施</td>
+		<td>优先级</td>
+	</tr>
+	<tr>
+		<td>团队成员对tengine与LVS的内部实现机制不熟悉，一旦出现底层问题较难解决</td>
+		<td>后期需要跟进研究，建议有专人研究这两块</td>
+		<td>中</td>
+	</tr>	
+	<tr>
+		<td>LVS部署在物理机上，IP事先分配，一旦变成公有云将无法满足需求</td>
+		<td>后期跟进研究</td>
+		<td>中</td>
+	</tr>		
+</table>
 
-## 9. 统计分析说明
 
 
 
