@@ -13,9 +13,7 @@
 	* RegisterInstancesWithLoadBalancer
 	* DeregisterInstancesFromLoadBalancer
 	* ModifyLoadBalancerAttributes
-	* SetLoadBlanacerListnerSSLCertificate
-	* SetLoadBlanacerPoliciesForBackendServer
-	* SetLoadBalancerPoliciesOfListener	
+
 	
 * 用户API -- 描述类
 	* DescribeLoadBlanacerAttributes
@@ -43,6 +41,7 @@
 * 所有请求走https， 默认域名 https://elb.cloud.netease.com/api
 * 所有返回结果都是json
 * 所有响应结果里都带了requestId，参考了aws，主要为了日志跟踪，所有请求都有唯一的id
+
 
 ## 二、用户API -- 操作类
 
@@ -583,6 +582,82 @@ https://elb.cloud.netease.com/api?action=ModifyLoadBalancerAttributes
 		 "Enabled": true,        "S3BucketName": "my-loadbalancer-logs",        "S3BucketPrefix": "my-bucket-prefix/prod",        "EmitInterval": 60
 	}
 }
+
+## 三、用户API -- 描述类
+
+### 3.1 DescribeLoadBlanacerAttributes
+
+#### 描述
+
+显示负载均衡器的相关属性
+
+#### 请求参数
+
+* LoadBalancerName：负载均衡器名称
+
+#### 响应结果
+
+* LoadBalancerAttributes： 负载均衡器相关属性
+
+#### 错误 
+
+##### AccessPointNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
+#### 示例
+
+
+* 示例请求
+
+```
+https://elb.cloud.netease.com/api?action=DescribeLoadBlanacerAttributes
+&LoadBalancerName=my-test-loadbalancer```
+
+* 示例响应
+
+```
+{
+	"RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE",
+	{
+	"LoadBalancerAttributes" :
+		"AccessLog": {
+		  "Enabled": true,      	  "S3BucketName": "my-loadbalancer-logs",      	  "S3BucketPrefix": "my-bucket-prefix/prod",      	  "EmitInterval": 60
+		},
+		"ConnectionDraining": {
+			"Enabled": true,
+			"timeout": 60
+		}
+	}}
+```
+
+
+### 3.2 DescribeInstanceHealth
+
+
+
+### 3.3 DescribeLoadBalancerPolicies
+
+#### 描述
+
+显示负载均衡器的策略
+
+#### 请求参数
+
+* LoadBalancerName；负载均衡名
+* PolicyNames.member.N： 策略参数列表
+
+#### 响应参数
+
+* PolicyDescriptions： 一组策略描述列表
+* 
+
+
+
+### 3.4 DescribeLoadBalancerPolicyTypes
+
+### 3.5 DescribeLoadBalancers
 
 
 
