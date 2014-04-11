@@ -1,4 +1,4 @@
-# elb部署架构
+# ELB部署架构
 
 ## 1. 系统说明
 
@@ -21,7 +21,7 @@ ELB主要用于解决服务器负载均衡资源利用率低、配置复杂、�
 
 ELB的系统架构以及与其他模块交互的架构图如图如示：
 
-<img src="img/elb-deploy-arch.png" width="800px"/>
+<img src="img/elb-deploy-arch.png" width="600px"/>
 
 
 
