@@ -583,6 +583,8 @@ https://elb.cloud.netease.com/api?action=ModifyLoadBalancerAttributes
 	}
 }
 
+```
+
 ## 三、用户API -- 描述类
 
 ### 3.1 DescribeLoadBlanacerAttributes
@@ -620,8 +622,8 @@ https://elb.cloud.netease.com/api?action=DescribeLoadBlanacerAttributes
 ```
 {
 	"RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE",
+	"LoadBalancerAttributes" : 
 	{
-	"LoadBalancerAttributes" :
 		"AccessLog": {
 		  "Enabled": true,      	  "S3BucketName": "my-loadbalancer-logs",      	  "S3BucketPrefix": "my-bucket-prefix/prod",      	  "EmitInterval": 60
 		},
@@ -635,13 +637,9 @@ https://elb.cloud.netease.com/api?action=DescribeLoadBlanacerAttributes
 
 ### 3.2 DescribeInstanceHealth
 
-
-
-### 3.3 DescribeLoadBalancerPolicies
-
 #### 描述
 
-显示负载均衡器的策略
+显示负载均衡器后端instance的健康状态。
 
 #### 请求参数
 
@@ -650,17 +648,237 @@ https://elb.cloud.netease.com/api?action=DescribeLoadBlanacerAttributes
 
 #### 响应参数
 
-* PolicyDescriptions： 一组策略描述列表
-* 
+* instanceStates： 各个instance列表
 
+#### 错误
+
+##### AccessPointNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
+##### InvalidEndPoint
+
+* endpoint 不正确
+* HTTP Status Code: 400
+
+
+#### 示例
+
+
+* 示例请求
+
+```
+https://elb.cloud.netease.com/api?action=DescribeInstanceHealth
+&LoadBalancerName=my-test-loadbalancer
+```
+
+* 示例响应
+
+```
+{
+	"RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE",	"InstanceStates" :
+	[
+		{
+			"Description": "N/A",
+			"InstanceId": "i-90d8c2a5",
+			"State": "InService",
+			"ReasonCode": "N/A"
+		},
+		{
+			"Description": "Instance has failed at least the UnhealthyThreshold number of health checks consecutively.",
+			"InstanceId": "i-90d8c2c9",
+			"State": "OutOfService",
+			"ReasonCode": "Instance"
+		}
+	]}
+```
+
+
+
+### 3.3 DescribeLoadBalancerPolicies
+
+#### 描述
+
+描述负载均衡器的策略列表。
+
+#### 请求参数
+
+* LoadBalancerName；负载均衡名
+	* Type: String
+	* Required: No 
+* PolicyNames.member.N： 策略参数列表名称
+	* Type: String
+	* Required: No 
+
+#### 响应参数
+
+* PolicyDescriptions： 策略描述列表
+
+#### 错误 
+
+##### AccessPointNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
+##### PolicyNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
+#### 示例
+
+* 示例请求
+
+```
+https://elb.cloud.netease.com/api?action=DescribeLoadBalancerPolicies
+&LoadBalancerName=my-test-loadbalancer
+```
+
+* 示例响应
+
+```
+{
+	"RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE",	"PolicyDescriptions" :
+	[
+		{
+			"PolicyName": "MyDurationStickyPolicy",
+			"PolicyTypeName": "LBCookieStickinessPolicyType",
+			"PolicyAttributeDescriptions": [
+				{"AttributeName" : "CookieExpirationPeriod","AttributeValue": 60}
+			]
+		},
+		{
+			"PolicyName": "EnableProxyProtocol",
+			"PolicyTypeName": "ProxyProtocolPolicyType",
+			"PolicyAttributeDescriptions": [
+				{"AttributeName" : "ProxyProtocol","AttributeValue": true}
+			]
+		}
+	]}
+
+```
 
 
 ### 3.4 DescribeLoadBalancerPolicyTypes
 
+#### 描述
+
+描述负载均衡器的策略列表。
+
+#### 请求参数
+
+
+* PolicyNames.member.N： 策略参数列表名称
+	* Type: String
+	* Required: No 
+
+#### 响应参数
+
+* PolicyTypeDescriptions： 策略类型描述列表
+
+#### 错误 
+
+##### PolicyTypeNotFound
+
+* 请求的PolicyType不存在
+* HTTP Status Code: 400
+
+#### 示例
+
+* 示例请求
+
+```
+https://elb.cloud.netease.com/api?action=DescribeLoadBalancerPolicyTypes```
+
+* 示例响应
+
+```
+{
+	"RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE",	"PolicyTypeDescriptions" :
+	[
+		{"PolicyTypeName": "SSLNegotiationPolicyType" ...}, 
+		{"PolicyTypeName": "PublicKeyPolicyType" ...}, 		{"PolicyTypeName": "LBCookieStickinessPolicyType" ...}, 
+		{"PolicyTypeName": "BackendServerAuthenticationPolicyType" ...}, 
+		{
+			"PolicyTypeName": "ProxyProtocolPolicyType",
+			"PolicyAttributeTypeDescriptions": [
+				{"AttributeName" : "ProxyProtocol", "AttributeType":"Boolean", "Cardinality": "ONE"}
+			]
+						"Description": "Policy that controls whether to include the IP address and 				port of the originating request for TCP messages.        		This policy operates on TCP/SSL listeners only"		}
+	]}
+
+```
+
+
 ### 3.5 DescribeLoadBalancers
 
 
+#### 描述
 
+获取所有的负载均衡器描述
+
+#### 请求参数
+
+* LoadBalancerNames.member.N: 负载均衡器列表， not required
+
+
+#### 响应参数
+
+* LoadBalancerDescriptions: 负载均衡器描述列表
+
+
+#### 错误 
+
+##### AccessPointNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
+#### 示例
+
+* 示例请求
+
+```
+https://elb.cloud.netease.com/api?action=DescribeLoadBalancers
+
+```
+
+* 示例响应
+
+```
+{
+	"RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE",	"LoadBalancerDescriptions" :
+	[
+		{
+			"LoadBalancerName": "SSLNegotiationPolicyType",
+			"CreatedTime": "2013-05-24T21:15:31.280Z",
+			"HealthCheck": {
+				"Interval": 90,
+				"Target":"HTTP:80",
+				"HealthyThreshold":2,
+				"Timeout":60,
+				"UnhealthyThreshold":10
+			},
+			"ListenerDescrpitions": [
+				"listener": {
+					"Protocol": "http",
+					"LoadBalancerPort": 80,
+					"InstanceProtocol":"HTTP",
+					"InstancePort":80
+				}
+			],
+			"instances": [
+				{"InstanceId": "i-e4cbe38d"}
+			],
+			"policies": [
+				{"LBCookieStickinessPolicies":""},
+				{"OtherPolicies":""}
+			]			
+		}
+	]}
+```
 
 
 
