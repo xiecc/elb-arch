@@ -13,6 +13,8 @@
 	* RegisterInstancesWithLoadBalancer
 	* DeregisterInstancesFromLoadBalancer
 	* ModifyLoadBalancerAttributes
+	* CreateLoadBalancerListeners
+	* DeleteLoadBalancerListners
 
 	
 * 用户API -- 描述类
@@ -114,7 +116,7 @@ https://elb.cloud.netease.com/api?action=CreateLoadBalancer
 
 ```
 
-### 2.1 CheckLoadBalancerStatus
+### 2.2 CheckLoadBalancerStatus
 
 #### 描述
 
@@ -167,7 +169,7 @@ https://elb.cloud.netease.com/api?action=CheckLoadBalancerStatus
 }
 ```
 
-### DeleteLoadBalancer
+### 2.3 DeleteLoadBalancer
 
 #### 描述
 
@@ -216,7 +218,7 @@ https://elb.cloud.netease.com/api?action=DeleteLoadBalancer
 ```
 
 
-### ConfigureHealthCheck
+### 2.4 ConfigureHealthCheck
 
 #### 描述
 
@@ -271,7 +273,7 @@ https://elb.cloud.netease.com/api?action=ConfigureHealthCheck
 
 
 
-### CreateLBCookieStickinessPolicy
+### 2.5 CreateLBCookieStickinessPolicy
 
 #### 描述
 
@@ -328,7 +330,7 @@ https://elb.cloud.netease.com/api?action=CreateLBCookieStickinessPolicy
 
 ```
 
-### CreateLoadBalancerPolicy
+### 2.6 CreateLoadBalancerPolicy
 
 #### 描述
 
@@ -391,7 +393,7 @@ https://elb.cloud.netease.com/api?action=CreateLoadBalancerPolicy
 
 ```
 
-### DeleteLoadBalancerPolicy
+### 2.7 DeleteLoadBalancerPolicy
 
 #### 描述
 
@@ -439,7 +441,7 @@ https://elb.cloud.netease.com/api?action=DeleteLoadBalancerPolicy
 
 ```
 
-### RegisterInstanceWithLoadBalancer
+### 2.8 RegisterInstanceWithLoadBalancer
 
 
 #### 描述
@@ -484,7 +486,7 @@ https://elb.cloud.netease.com/api?action=RegisterInstanceWithLoadBalancer
 }
 ```
 
-### DeregisterInstanceFromLoadBalancer
+### 2.9 DeregisterInstanceFromLoadBalancer
 
 
 #### 描述
@@ -528,7 +530,7 @@ https://elb.cloud.netease.com/api?action=DeregisterInstanceFromLoadBalancer
 }
 ```
 
-### ModifyLoadBalancerAttributes
+### 2.10 ModifyLoadBalancerAttributes
 
 #### 描述 
 
@@ -584,6 +586,82 @@ https://elb.cloud.netease.com/api?action=ModifyLoadBalancerAttributes
 }
 
 ```
+
+### 2.11 CreateLoadBalancerListners
+
+#### 描述 
+
+在负载均衡器上创建一个或多个listner。 支持https
+
+#### 请求参数
+
+* LoadBalancerName 负载均衡器名字
+* Listners.member.N 端口号列表
+
+#### 响应参数
+
+* 没有, 只要返回requestId
+
+#### 错误
+
+##### AccessPointNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
+#### DuplicateListner
+
+* Listner对应端口已经存在
+* HTTP Status Code: 400
+
+#### InvalidConfigurationRequest
+
+* 请求的配置修改错误
+* HTTP Status Code: 409
+
+#### CertificateNotFound
+
+* 证书未找到
+* HTTP Status Code: 400
+
+#### 示例
+
+* 示例请求 
+
+```
+https://elb.cloud.netease.com/api?action=CreateLoadBalancerListners
+&Listeners.member.1.LoadBalancerPort=443 
+&Listeners.member.1.InstancePort=443 
+&Listeners.member.1.InstanceProtocol=https 
+&Listeners.member.1.SSLCertificateId=arn:aws:iam::123456789012:server-certificte/servercert&LoadBalancerName=MyHTTPSLoadBalancer
+```
+* 示例响应
+
+```
+{
+	"RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE"
+}
+```
+
+
+### 2.12 DeleteLoadBalancerListners
+
+#### 描述
+
+ 删除某指定端口的负载均衡器listener
+ 
+#### 请求参数
+
+* LoadBalancerName 负载均衡器名称
+* LoadBalancerPorts.member.N  端口号列表
+
+#### 错误
+
+##### AccessPointNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
 
 ## 三、用户API -- 描述类
 
@@ -1268,7 +1346,7 @@ https://elb.cloud.netease.com/api?action=DescribeLoadBalancerAgents
 ```
 
 
-### 5.2 DescribeLoadBalancerLVSConf
+### 5.3 DescribeLoadBalancerLVSConf
 
 #### 描述
 
@@ -1318,7 +1396,7 @@ https://elb.cloud.netease.com/api?action=DescribeLoadBalancerLVSConf
 }
 ```
 
-### 5.2 DescribeLoadBalancerTengineConf
+### 5.4 DescribeLoadBalancerTengineConf
 
 #### 描述
 
@@ -1358,10 +1436,13 @@ https://elb.cloud.netease.com/api?action=DescribeLoadBalanceTengineConf
     	   "worker_procsses":8,
     	   "ip": "10.13.12.12",
     	   "port": 80,
-    	   "upstream-backend": [   	   
+    	   "upstream-backend": {
+    	   		"ip_hash": false,
+    	   		"servers":[       	   	   
     	   		{"url":"127.0.0.1:8080 ", "weight":5},
     	   		{"url":"127.0.0.2:8080", "weight":3, "max_fails":3, "fail_timeout":"30s}"
-    	   ]
+    	   		]
+    	   }
     	}
     ]
 }
