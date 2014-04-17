@@ -27,11 +27,11 @@
 	* DeregisterTengineFromLoadBalancer
 	* UpdateAgentForLoadBalancer
 	* UpdateScriptForLoadBalancer
+	* ExecCommandForLoadBalancer
 		
 * 管理员API -- 描述类	
 	* DescribeLoadBalancerServers
-	* DescribeLoadBalancerLVSStatus
-	* DescribeLoadBalancerTengineStatus
+	* DescribeLoadBalancerAgents
 	* DescribeLoadBalancerLVSConf
 	* DescribeLoadBalancerTengineConf
 	
@@ -879,6 +879,509 @@ https://elb.cloud.netease.com/api?action=DescribeLoadBalancers
 		}
 	]}
 ```
+
+## 四、管理员API -- 操作类
+
+### 4.1 RegisterTengineWithLoadBalancer
+
+#### 描述
+
+在http的负载均衡器上新增tengine实例.
+
+#### 请求参数
+
+* LoadBalancerName：负载均衡器名称 
+* TengineNumber: 添加tengine的台数
+
+
+#### 响应
+
+* tengineInstances: 更新后的instance列表
+
+#### 错误 
+
+##### AccessPointNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
+#### 示例
+
+* 示例请求
+
+```
+https://elb.cloud.netease.com/api?action=RegisterTengineWithLoadBalancer&TengineNumber=2
+
+```
+
+* 示例响应结果
+
+```
+{
+	"RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE",	"tengineInstances" :
+	[
+		{"InstanceId": "900088"},
+		{"InstanceId": "79999"}
+	]}
+```
+
+
+### 4.2 DeregisterTengineFromLoadBalancer
+
+#### 描述
+
+在http的负载均衡器上减少tengine实例
+
+#### 请求参数
+
+* LoadBalancerName: 负载均衡器名称
+* Tengines.member.N: 删除的member列表 
+
+#### 响应
+
+* tengineInstances: 更新后的Instance列表
+
+
+#### 错误 
+
+##### AccessPointNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
+##### TengineNotFound
+
+* tenginge对应的instance不存在
+* HTTP Status Code: 400
+
+
+#### 示例
+
+* 示例请求
+
+```
+https://elb.cloud.netease.com/api?action=DeregisterTengineFromLoadBalancer&Tengines.member.1.InstanceId=9908899&Tengines.member.2.InstanceId=7889
+
+```
+
+* 示例响应
+
+```
+{
+    "RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE"，
+    "tengineInstances" :
+	[
+		{"InstanceId": "230000-122"},
+		{"InstanceId": "u8999-1"}
+	]
+}
+
+```
+
+
+### 4.3 UpdateAgentForLoadBalancer
+
+#### 描述
+
+更新负载均衡器上所有agent的版本。
+
+agent收到请求后，从http服务器找到最新版的agent下载并解压。  
+由crontab脚本检查内存中agent版本号，发现版本低则重启。
+
+#### 请求参数
+
+* LoadBalancerName: 负载均衡器名称， 可不填， 不填则更新所有agent
+* Instances.member.N: 某个instanceId的agent， 可不填，不填是全部
+* agentVersion：agent的版本号 
+
+#### 响应
+
+* Instances: 更新成功的instance列表 
+
+
+#### 错误 
+
+##### AccessPointNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
+##### InvalidHttpServer
+
+* 更新的http服务器访问不了
+* HTTP Status Code: 500
+
+
+##### AgentVersionNotFound
+
+* 在http服务器上，找不到对应的版本号的agent
+* HTTP Status Code: 400
+
+
+#### 示例
+
+* 示例请求
+
+```
+https://elb.cloud.netease.com/api?action=UpdateAgentForLoadBalancer
+&LoadBalancerName=uiii&agentVersion=0.3
+
+```
+
+* 示例响应
+
+```
+{
+    "RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE"，
+    "Instances" :
+	[
+		{"InstanceId": "230000-122"},
+		{"InstanceId": "u8999-1"}
+	]
+}
+
+```
+
+
+### 4.4 UpdateScriptForLoadBalancer
+
+#### 描述 
+
+更新运维脚本。
+运维脚本打包成一个tar包放在http服务器上， 并带有版本号， 每次更新时从服务器下载。
+
+#### 请求参数
+
+* LoadBalancerName  负载均衡器名， 可不填，不填则更新所有相关服务器
+* Instances.memeber.N Instance名列表，可不填，不填就是全部
+* scriptVersion  脚本的版本号
+
+#### 响应
+
+* Instances, 更新成功的服务器instance列表 
+
+#### 错误 
+
+##### AccessPointNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
+##### InvalidHttpServer
+
+* 更新的http服务器访问不了
+* HTTP Status Code: 500
+
+##### ScriptVersionNotFound
+
+* 在http服务器上，找不到对应的版本号的script
+* HTTP Status Code: 400
+
+#### 示例
+
+* 示例请求
+
+```
+https://elb.cloud.netease.com/api?action=UpdateScriptForLoadBalancer
+&Instanceces.member.1=333201-1&scriptVersion=0.3
+
+```
+
+* 示例响应
+
+```
+{
+    "RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE"，
+    "Instances" :
+	[
+		{"InstanceId": "333201-1"}
+	]
+}
+
+```
+
+### 4.5 ExecCommandForLoadBalancer
+
+#### 描述
+
+在负载均衡器的各个主机instance上执行shell脚本。
+shell脚本可以从http服务器下载， 也可以在body里post过去。
+
+ExecCommand把宿主机上所有的运维命令都抽象了， 如更新tengine配置或权重，更新LVS配置等，都是扔shell命令完成的。
+
+#### 请求参数
+
+* LoadBalancerName 对应的负载均衡器
+* Instances.memeber.N Instance名列表，可不填，不填就是全部
+* Commmand    放在body里post过去， 与shellName 两个参数2选1 
+* ShellName   执行的sh脚本名称， agent会从http服务器下载该脚本
+
+#### 响应
+
+* results 执行成功的instance列表，及响应结果
+
+#### 错误 
+
+##### AccessPointNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
+##### InvalidHttpServer
+
+* 更新的http服务器访问不了
+* HTTP Status Code: 500
+
+
+#### 示例
+
+* 示例请求
+
+```
+https://elb.cloud.netease.com/api?action=ExecCommandForLoadBalancer
+&Instanceces.member.1=333201-1&shellName=addTask.sh
+
+```
+
+* 示例响应
+
+```
+{
+    "RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE"，
+    "results" :
+	[
+		{"InstanceId": "333201-1", "response":"add cron task success"},
+		{"InstanceId": "333201-2", "response":"add cron task success"},
+	]
+}
+```
+
+## 五、管理员API -- 描述类
+
+### 5.1 DescribeLoadBalancerServers
+
+#### 描述
+
+获取负载均衡器对应所有的server信息。
+
+#### 请求参数
+
+* LoadBalancerName 对应负载均衡器的名称
+
+#### 响应
+
+* servers 所有server instances的描述
+
+#### 错误
+
+##### AccessPointNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
+#### 示例
+
+* 示例请求
+
+```
+https://elb.cloud.netease.com/api?action=ExecCommandForLoadBalancer
+&LoadBalancerName=xhklhi
+```
+* 示例响应
+
+```
+{
+    "RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE"，
+    "servers" :
+	[
+		{
+			"InstanceId": "333201-1", 
+			"ServiceType":"LVS",	
+			"ContainerType":"physical",		
+			"IP":"10.1.3.4",
+			"port": "9200",
+			"cpu": "16core",
+			"memory":"32G"	
+		},
+		{
+			"InstanceId": "333201-2", 
+			"ServiceType":"Tengine",
+			"ContainerType": "lxc",		
+			"Weight": "0.3"	
+			"IP":"10.1.3.5",
+			"port": "9201",
+			"cpu": "3core",			
+			"memory":"32G"
+		}
+		{"InstanceId": "333201-2" ...}
+	]
+}
+```
+
+### 5.2 DescribeLoadBalancerAgents
+
+#### 描述
+
+获取负载均衡器对应的agent信息， 如版本号、启动时间， 占用内存、cpu，
+
+#### 请求参数
+
+* LoadBalancerName 对应负载均衡器的名称
+
+#### 响应
+
+* agents, agents列表的信息
+
+#### 错误
+
+##### AccessPointNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
+#### 示例
+
+* 示例请求
+
+```
+https://elb.cloud.netease.com/api?action=DescribeLoadBalancerAgents
+&LoadBalancerName=xhklhi
+```
+* 示例响应
+
+```
+{
+    "RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE"，
+    "agents" :
+	[
+		{
+			"InstanceId": "333201-1", 
+			"ServiceType":"LVS",	
+			"AgentVersion":"0.3.1",		
+			"AgentStartTime":"2014-03-12 05:13:02",
+			"AgentMemory": "5M",
+			"AgentCpu": "0.03"
+		},
+		{"InstanceId": "333201-2" ...}
+	]
+}
+```
+
+
+### 5.2 DescribeLoadBalancerLVSConf
+
+#### 描述
+
+获取LVS的配置信息
+
+#### 请求参数
+
+* LoadBalancerName 对应负载均衡器的名称
+
+#### 响应
+
+* LVSConf 的信息
+
+#### 错误
+
+##### AccessPointNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
+#### 示例
+
+* 示例请求
+
+```
+https://elb.cloud.netease.com/api?action=DescribeLoadBalancerLVSConf
+&LoadBalancerName=xhklhi
+```
+* 示例响应
+
+```
+{
+    "RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE"，
+    "LVSConfigs" : [
+    	{
+    	"InstanceId":"xxx-111",
+    	"BackUpInstanceId": "yyy-222",
+    	"ConnectMode":"DR"
+    	"HashRoute": "rountrobin",
+    	"port":9092,
+    	"IP":"10.13.13.13"
+    	"Realservers" : [
+    		{"InstanceId": "zzz-333"}
+    	]
+    	}
+    ]
+}
+```
+
+### 5.2 DescribeLoadBalancerTengineConf
+
+#### 描述
+
+获取tengine的配置信息
+
+#### 请求参数
+
+* LoadBalancerName 对应负载均衡器的名称
+
+#### 响应
+
+* TengineConfigs ， tengine的列表
+
+#### 错误
+
+##### AccessPointNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
+#### 示例
+
+* 示例请求
+
+```
+https://elb.cloud.netease.com/api?action=DescribeLoadBalanceTengineConf
+&LoadBalancerName=xhklhi
+```
+* 示例响应
+
+```
+{
+    "RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE"，
+    "TengineConfigs" : [
+    	{
+    	   "InstanceId": "xxx-yyy",
+    	   "worker_procsses":8,
+    	   "ip": "10.13.12.12",
+    	   "port": 80,
+    	   "upstream-backend": [
+    	   		"127.0.0.1:8080",
+    	   		"127.0.0.2:8080",
+    	   ]
+    	}
+    ]
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
