@@ -1358,14 +1358,15 @@ https://elb.cloud.netease.com/api?action=DescribeLoadBalanceTengineConf
     	   "worker_procsses":8,
     	   "ip": "10.13.12.12",
     	   "port": 80,
-    	   "upstream-backend": [
-    	   		"127.0.0.1:8080",
-    	   		"127.0.0.2:8080",
+    	   "upstream-backend": [   	   
+    	   		{"url":"127.0.0.1:8080 ", "weight":5},
+    	   		{"url":"127.0.0.2:8080", "weight":3, "max_fails":3, "fail_timeout":"30s}"
     	   ]
     	}
     ]
 }
 ```
+
 
 
 
