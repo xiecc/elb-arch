@@ -613,7 +613,76 @@ TODO
 	</tr>						
 </table>
 
-## 8. 风险控制
+## 8. 统计数据
+
+<table>
+	<tr>
+		<th>项目</th>
+		<th>统计标准</th>
+		<th>维度</th>
+		<th>说明</th>
+	</tr>
+	<tr>
+		<td>HealthyHostCount</td>
+		<td>average  max/min</td>
+		<td>AZ</td>
+		<td>健康的instance数量</td>
+	</tr>	
+	<tr>
+		<td>UnHealthyHostCount</td>
+		<td>average max/min</td>
+		<td>AZ</td>
+		<td>不健康的instance数量</td>
+	</tr>	
+	<tr>
+		<td>Latency</td>
+		<td>average max/min</td>
+		<td>AZ</td>
+		<td>响应时间</td>
+	</tr>		
+	<tr>
+		<td>HTTPCode_ELB_4XX</td>
+		<td>sum</td>
+		<td>LoadBalancerName</td>
+		<td>响应返回4xx的请求数</td>
+	</tr>		
+	<tr>
+		<td>HTTPCode_ELB_5XX</td>
+		<td>sum</td>
+		<td>LoadBalancerName</td>
+		<td>响应返回5xx的请求数</td>
+	</tr>		
+	<tr>
+		<td>
+			HTTPCode_Backend_2XX
+			HTTPCode_Backend_3XX
+			HTTPCode_Backend_4XX
+			HTTPCode_Backend_5XX
+		</td>
+		<td>sum</td>
+		<td>LoadBalancerName</td>
+		<td>Instance返回该code的请求数</td>
+	</tr>											<tr>
+		<td>BackendConnectionErrors</td>
+		<td>sum</td>
+		<td>LoadBalancerName</td>
+		<td>负载均衡器与后端错误连接数</td>
+	</tr>		
+	<tr>
+		<td>SurgeQueueLength</td>
+		<td>max average</td>
+		<td>AZ</td>
+		<td>某一时刻排队的请求数</td>
+	</tr>	
+	<tr>
+		<td>SpilloverCount</td>
+		<td>sum</td>
+		<td>LoadBalancerName</td>
+		<td>过载导致请求失败的数量</td>
+	</tr>						
+</table>
+
+## 9. 风险控制
 
 <table>
 	<tr>

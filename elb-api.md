@@ -4,7 +4,6 @@
 * 说明
 * 用户API -- 操作类
 	* CreateLoadBalancer
-	* CheckLoadBalancerStatus
 	* DeleteLoadBalancer
 	* ConfigureHealthCheck
 	* CreateLBCookieStickinessPolicy
@@ -15,7 +14,9 @@
 	* ModifyLoadBalancerAttributes
 	* CreateLoadBalancerListeners
 	* DeleteLoadBalancerListners
-
+	* CheckLoadBalancerStatus
+	* AttachLoadBalancerToSubnets
+	* DettachLoadBalancerFromSubnets	
 	
 * 用户API -- 描述类
 	* DescribeLoadBlanacerAttributes
@@ -43,6 +44,7 @@
 * 所有请求走https， 默认域名 https://elb.cloud.netease.com/api
 * 所有返回结果都是json
 * 所有响应结果里都带了requestId，参考了aws，主要为了日志跟踪，所有请求都有唯一的id
+* 有很多http请求响应需要的时间非常久，如果等待返回结果肯定会引起http超时。因此一般发请求后立刻返回，通过 CheckLoadBalancerStatus API检查LoadBlancer的状态
 
 
 ## 二、用户API -- 操作类
@@ -53,21 +55,24 @@
 
 创建一个负载均衡器。
 
-该操作周期较长，因此请求提交后，服务端校验请求是否合法，然后直接返回。 
+一个完整的负载均衡器需要较长的周期来创建，且需要非常多的参数。
 
-后续通过CheckLbCreateStatus检查创建的状态与结果。
+LoadBalancer的参数有：
+ELB名称、Listener配置（LB的协议和端口，后端实例的协议和端口）、Health Check配置(Ping的协议和端口，Ping的间隔和超时时间，HTTP检查域名、检查端口、检查路径、响应超时时间，鉴定健壮和非健壮的标准)、会话保持、均衡策略、ELB管理的主机实例配置等。
+
+参考amazon的创建步骤，本请求主要是创建listener和负载均衡相关数据。
+
+HealthCheck, 会话保持， 实例管理等将分为多个API请求完成。
 
 #### 请求参数
 
 * LoadBalancerName： 名称
-* Scheme: http 或 tcp
-* InstanceNum: 后端instance数量
-* InstancePort: 后端instance端口
+* Listeners.member.N： listener的列表， 是一个三元组 {LoadBalancerPort,InstancePort,Protocol}
 
 #### 响应结果
 
-* Status:  
-	* 创建状态, StartCreate, ProcessCreate, CreateSuccess, CreateFail
+* LoadBalancerUrl:  
+	* 负载均衡器对应的URL
 	* Type: String
 
 #### 错误
@@ -77,9 +82,9 @@
 * 名称重复
 * HTTP Status Code: 400
 
-##### InvalidateParamRequest
+##### InvalidateConfigurationRequest
 
-* 请求参数错误
+* 请求的配置不正确
 * HTTP Status Code: 409
 
 ##### InvalidateScheme
@@ -87,14 +92,20 @@
 * 传入Scheme错误
 * HTTP Status Code: 409
 
+##### CertificateNotFound
+
+* 使用SSL证书时证书未找到
+* HTTP Status Code: 409
+
+
 ####  示例
 
 * 示例请求
 
 ```
 https://elb.cloud.netease.com/api?action=CreateLoadBalancer
-&LoadBalancerName=blog&Scheme=http
-&InstanceNum=5&InstancePort=8083
+&Listeners.member.1.LoadBalancerPort=443&Listeners.member.1.InstancePort=443&Listeners.member.1.Protocol=https &Listeners.member.1.InstanceProtocol=https 
+&Listeners.member.1.SSLCertificateId=arn:aws:iam::123456789012:server-certific ate/servercert
 ```
 
 * 示例响应
@@ -102,7 +113,7 @@ https://elb.cloud.netease.com/api?action=CreateLoadBalancer
 ```
 {
 	"RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE",
-	"Status" : "StartCreate"	
+	"LoadBalancerUrl" : "https://10.10.12.12"	
 }
 ```
 
@@ -116,84 +127,24 @@ https://elb.cloud.netease.com/api?action=CreateLoadBalancer
 
 ```
 
-### 2.2 CheckLoadBalancerStatus
 
-#### 描述
 
-检查ELB的创建状态
-
-#### 请求参数
-
-* LoadBalancerName: 负载均衡器名称
-
-#### 响应结果
-
-* Status:  
-	* 创建状态, StartCreate, ProcessCreate, CreateSuccess, CreateFail	* Type: String
-* Step：
-	* 创建步数：到工作流的第几步
-	* Type: Integer
-* Url
-	* 创建成功后的url， 不成功没有这个参数
-	* Type: String
-	
-#### 错误
-	
-##### InvalidateParamRequest
-
-* 请求参数错误
-* HTTP Status Code: 409
-
-##### AccessPointNotFound
-
-* 请求的LB不存在
-* HTTP Status Code: 400
-
-#### 示例
-
-* 示例请求
-
-```
-https://elb.cloud.netease.com/api?action=CheckLoadBalancerStatus
-&LoadBalancerName=blog
-
-```
-* 示例响应
-
-```
-{
-	"RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE",
-	"status": "CreateSuccess",
-	"step"": 8,
-	"url" : "http://10.123.123.123:7070"
-}
-```
-
-### 2.3 DeleteLoadBalancer
+### 2.2 DeleteLoadBalancer
 
 #### 描述
 
 删除负载均衡器。
 
-这个过程也可能比较久， 所以校验完参数即返回， 通过CheckLoadBalancerStatus确定是否成功。
-
 #### 请求参数
 
 * LoadBalancerName: 负载均衡器名称
 
 #### 响应结果
 
-* Status
-	* 开始进行：StartDelete
-	* Type: String
+无，只要requestId
 
 #### 错误
 	
-##### InvalidateParamRequest
-
-* 请求参数错误
-* HTTP Status Code: 409
-
 ##### AccessPointNotFound
 
 * 请求的LB不存在
@@ -212,13 +163,12 @@ https://elb.cloud.netease.com/api?action=DeleteLoadBalancer
 
 ```
 {
-	"RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE",
-	"status": "DeleteSuccess"
+	"RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE"
 }
 ```
 
 
-### 2.4 ConfigureHealthCheck
+### 2.3 ConfigureHealthCheck
 
 #### 描述
 
@@ -273,7 +223,7 @@ https://elb.cloud.netease.com/api?action=ConfigureHealthCheck
 
 
 
-### 2.5 CreateLBCookieStickinessPolicy
+### 2.4 CreateLBCookieStickinessPolicy
 
 #### 描述
 
@@ -330,7 +280,7 @@ https://elb.cloud.netease.com/api?action=CreateLBCookieStickinessPolicy
 
 ```
 
-### 2.6 CreateLoadBalancerPolicy
+### 2.5 CreateLoadBalancerPolicy
 
 #### 描述
 
@@ -393,7 +343,7 @@ https://elb.cloud.netease.com/api?action=CreateLoadBalancerPolicy
 
 ```
 
-### 2.7 DeleteLoadBalancerPolicy
+### 2.6 DeleteLoadBalancerPolicy
 
 #### 描述
 
@@ -441,7 +391,7 @@ https://elb.cloud.netease.com/api?action=DeleteLoadBalancerPolicy
 
 ```
 
-### 2.8 RegisterInstanceWithLoadBalancer
+### 2.7 RegisterInstanceWithLoadBalancer
 
 
 #### 描述
@@ -486,7 +436,7 @@ https://elb.cloud.netease.com/api?action=RegisterInstanceWithLoadBalancer
 }
 ```
 
-### 2.9 DeregisterInstanceFromLoadBalancer
+### 2.8 DeregisterInstanceFromLoadBalancer
 
 
 #### 描述
@@ -530,7 +480,7 @@ https://elb.cloud.netease.com/api?action=DeregisterInstanceFromLoadBalancer
 }
 ```
 
-### 2.10 ModifyLoadBalancerAttributes
+### 2.9 ModifyLoadBalancerAttributes
 
 #### 描述 
 
@@ -587,7 +537,7 @@ https://elb.cloud.netease.com/api?action=ModifyLoadBalancerAttributes
 
 ```
 
-### 2.11 CreateLoadBalancerListners
+### 2.10 CreateLoadBalancerListners
 
 #### 描述 
 
@@ -644,7 +594,7 @@ https://elb.cloud.netease.com/api?action=CreateLoadBalancerListners
 ```
 
 
-### 2.12 DeleteLoadBalancerListners
+### 2.11 DeleteLoadBalancerListeners
 
 #### 描述
 
@@ -661,6 +611,58 @@ https://elb.cloud.netease.com/api?action=CreateLoadBalancerListners
 
 * 请求的LB不存在
 * HTTP Status Code: 400
+
+### 2.12 CheckLoadBalancerStatus
+
+#### 描述
+
+检查负载均衡器的状态。很多操作执行周期长，有很多中间状态， 需要通过这个API去查
+
+#### 请求参数
+
+* LoadBalancerName 负载均衡器名称
+
+#### 响应参数
+
+* LoadBalancerStatus 负载均衡器的创建状态
+InCreateProcess InDeleteProcess InConfigListenerProcess Complete 
+
+#### 错误
+
+##### AccessPointNotFound
+
+* 请求的LB不存在
+* HTTP Status Code: 400
+
+#### 示例
+
+* 示例请求
+
+```
+https://elb.cloud.netease.com/api?action=CheckLoadBalancerStatus
+&LoadBalancerName=MyLoadBalancer
+
+```
+
+* 示例响应
+
+```
+{
+	"RequestId": "06b5decc-102a-11e3-9ad6-bf3e4EXAMPLE",
+    "LoadBalancerStatus" : {
+    	"status": "InConfigListenerProcess"    
+    }
+}
+
+```
+
+### 2.13 AttachLoadBalanerToSubnets
+
+下期完成
+
+### 2.14 DettachLoadBalanerFromSubnets
+
+下期完成
 
 
 ## 三、用户API -- 描述类
